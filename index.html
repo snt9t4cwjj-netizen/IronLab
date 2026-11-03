@@ -169,15 +169,12 @@ return `<div class=card><b>Reset today</b><p class=mu>Choose what to clear. Your
 function doReset(){if(rsel.mood){delete S.mood[today];delete S.adj[today];delete S.chat[today]}if(rsel.sets)delete S.logs[today];if(rsel.food)delete S.eat[today];if(rsel.ci)S.ci=S.ci.filter(x=>x!=today);if(rsel.day){pd=null;delete S.cm[today];delete S.custom[today]}save();rs=false;toast('Reset done');render()}
 function eraseAll(){if(!rarm2){rarm2=true;setTimeout(()=>rarm2=false,6000);return toast('Tap again to erase everything')}rarm2=false;S={logs:{},ci:[],mood:{},xp:0,prs:0,bw:[{d:today,w:175}],g:{k:2650,p:160,c:345,f:70},meals:null,eat:{},wk:{},got:{},foods:[],adj:{},chat:{},cm:{},custom:{},plan:JSON.parse(JSON.stringify(PLAN))};pd=null;tab='today';rs=false;save();toast('All data erased');render()}
 let incBW=false;
-const smsUrl=t=>'sms:'+(S.buddy||'')+(/iPad|iPhone|iPod/.test(navigator.userAgent)?'&':'?')+'body='+encodeURIComponent(t);
-function openSms(t){try{navigator.clipboard.writeText(t).catch(()=>{})}catch(e){}toast('Copied, in case Messages does not open');const a=document.createElement('a');a.href=smsUrl(t);a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove()}
-const buddyField=()=>`<label class=row style="margin-top:8px"><small>Buddy’s number (saved on this phone)</small><input type=tel inputmode=tel value="${esc(S.buddy||'')}" placeholder="+1 555 123 4567" onchange="S.buddy=this.value.replace(/[^\\d+]/g,'');save()" style="width:150px;padding:8px;border:1px solid var(--ln);border-radius:8px;background:var(--bg);color:var(--tx)"></label>`;
 async function shareText(t){
 try{if(navigator.share){await navigator.share({text:t});return}}catch(e){if(e&&e.name=='AbortError')return}
 try{await navigator.clipboard.writeText(t);toast('Copied. Paste it into Messages.');return}catch(e){}
 showShare(t)}
 function showShare(t){let o=$('shov');if(o)o.remove();o=document.createElement('div');o.id='shov';o.style.cssText='position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,.55);z-index:20;display:flex;align-items:center;justify-content:center;padding:16px';
-o.innerHTML=`<div class=card style="width:100%;max-width:420px"><b>Copy this text</b><textarea id=shta rows=5 readonly style="${IS};margin:8px 0"></textarea><p class=wrap><a class=pri href="${esc(smsUrl(t))}" style="text-decoration:none">Open Messages</a><button class=chip onclick="$('shov').remove()">Close</button></p></div>`;
+o.innerHTML=`<div class=card style="width:100%;max-width:420px"><b>Copy this text</b><textarea id=shta rows=5 readonly style="${IS};margin:8px 0"></textarea><p class=wrap><button class=chip onclick="$('shov').remove()">Close</button></p></div>`;
 document.body.appendChild(o);const ta=$('shta');ta.value=t;ta.focus();ta.select()}
 function dayText(){const L=S.logs[today],ex=L?Object.keys(L.ex).filter(id=>L.ex[id].length):[],nm=S.cm[today]?'my custom workout':(S.plan[pd]||{}).n||'workout';
 if(!ex.length)return S.ci.includes(today)?`Checked in at the gym. Starting ${nm} now.`:`Heading to the gym for ${nm} today.`;
@@ -188,7 +185,7 @@ days.forEach(d=>{const ex=S.logs[d].ex;Object.keys(ex).forEach(id=>{const a=ex[i
 const bw=[...S.bw].reverse().find(x=>x.d>=ws);return{n:days.length,sets,vol:Math.round(vol),pr,ci:S.ci.filter(x=>x>=ws&&x<=today).length,bw:bw&&bw.w}}
 function weekText(){const w=weekStats(),a=dt(wk(today)).toLocaleDateString(undefined,{month:'short',day:'numeric'}),k=streak();
 return `My week (since ${a}): ${w.n} workout${w.n==1?'':'s'}, ${w.sets} sets, ${w.vol.toLocaleString()} lb lifted${w.pr?', '+w.pr+' PR'+(w.pr>1?'s':''):''}. Gym check-ins: ${w.ci}. Streak: ${k} week${k==1?'':'s'}.${incBW&&w.bw?' Weight: '+w.bw+' lb.':''}`}
-function weekCard(){return `<div class=card><b>Share my week</b><p class=mu>Preview of the text you’ll send:</p><p>${esc(weekText())}</p><label class=row><span>Include body weight</span><input type=checkbox ${incBW?'checked':''} onchange="incBW=this.checked;render()"></label><p class=wrap><button class=pri onclick="shareText(weekText())">Share my week</button><button class=chip onclick="openSms(weekText())">Open Messages</button></p>${buddyField()}</div>`}
+function weekCard(){return `<div class=card><b>Share my week</b><p class=mu>Preview of the text you’ll send:</p><p>${esc(weekText())}</p><label class=row><span>Include body weight</span><input type=checkbox ${incBW?'checked':''} onchange="incBW=this.checked;render()"></label><p class=wrap><button class=pri onclick="shareText(weekText())">Share my week</button></p></div>`}
 let bld=false,bf='All';
 const cl=()=>(S.custom[today]=S.custom[today]||{lifts:[]}).lifts;
 function lastW(id){const H=hist(id,today);return H.length?tw(H[H.length-1]):''}
@@ -215,7 +212,7 @@ if(done.length&&lst){const a=tw(done),b=tw(lst);ar=a>b?`<b class=up>▲ +${a-b}<
 let rows='';for(let i=0;i<ns;i++){const d=done[i],p=lst?(lst[i]||lst[lst.length-1]):{w:'',r:''};const bw=cm&&cw!==''&&cw!=null?cw:(sg&&sg.dir=='up'?sg.w:p.w),w=d?d.w:(bw!==''&&mm=='d'?Math.round(bw*.9/2.5)*2.5:bw),r=d?d.r:(cm?(String(rp).match(/\d+/g)||['']).pop():p.r);
 rows+=`<div class="set${d?' ok':''}"><small>${i+1}</small><button onclick="adj('${id}',${i},-2.5)">−</button><input id="w-${id}-${i}" type=number inputmode=decimal value="${w}" placeholder="lb"><button onclick="adj('${id}',${i},2.5)">+</button><input id="r-${id}-${i}" type=number inputmode=numeric value="${r}" placeholder="reps"><button class=chk onclick="logSet('${id}',${i})">${d?'✓':'Log'}</button></div>`}
 return `<div class=card><div class=row><b>${e[0]}</b>${ar}</div><small>${e[1]} · ${e[2]} · ${ns} × ${rp}${lst?' · last: '+lst.map(x=>x.w+'×'+x.r).join(', '):''}</small>${sg&&!done.length?`<div class=tip style="margin:8px 0 2px"><b class="${sg.dir=='up'?'up':sg.dir=='down'?'dn':''}">${sg.dir=='up'?'▲ Try '+sg.w+' lb':sg.dir=='down'?'▼ Drop to '+sg.w+' lb':'＝ Stay at '+sg.w+' lb'}</b><br><small>${sg.msg}</small></div>`:(!lst?'<br><small class=mu>First time: start light and pick a weight you can lift for every rep with 1 to 2 reps left.</small>':'')}${rows}</div>`}).join('');
-return h+`<p class=wrap><button class=pri onclick="shareText(dayText())">Text my buddy</button><button class=chip onclick="openSms(dayText())">Open Messages</button></p>`+buddyField()}
+return h+`<p class=wrap><button class=pri onclick="shareText(dayText())">Text my buddy</button></p>`}
 function adj(id,i,d){const e=$('w-'+id+'-'+i);e.value=Math.max(0,(+e.value||0)+d)}
 function logSet(id,i){const w=+$('w-'+id+'-'+i).value,r=+$('r-'+id+'-'+i).value;if(!r)return toast('Enter reps first');
 const L=S.logs[today]||(S.logs[today]={plan:pd,ex:{}});L.plan=pd;const a=L.ex[id]||(L.ex[id]=[]);if(i>a.length)return toast('Log sets in order');
